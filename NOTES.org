@@ -1,0 +1,8 @@
+* Contraintes utilisées
+
+- day01: /pas de contrainte/
+- day02: /pas de contrainte/
+- day03: Interdiction d'utiliser des boucles
+- day05: Que du haut niveau / Que des listes chaînées
+- session spéciale : day05 plus efficace...
+
