@@ -42,7 +42,7 @@ instance Read WinLose where
 
 main = do
     contents <- getContents
-    let lns = fmap splitSpace . lines $ contents
+    let lns = fmap words . lines $ contents
         fstpart = fmap (fmap read) lns :: [[ RockPaperScissors ]]
         points = foldl countPoints 0 fstpart
 

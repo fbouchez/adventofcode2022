@@ -40,9 +40,6 @@ couple [a,b] = (a,b)
 splitComma :: String -> [String]
 splitComma = wordsWhen (==',')
 
-splitSpace :: String -> [String]
-splitSpace = wordsWhen (==' ')
-
 getInts :: IO [Int]
 getInts = do getLine >>= return . splitComma >>= return . map read
     -- l <- getLine
