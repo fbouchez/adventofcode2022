@@ -7,10 +7,10 @@ main = do
   print $ analyse 4 0 packet
   print $ analyse 14 0 packet
 
-analyse n x l@(_:rs) =
-    let deb = take n l in
-    let l = length $ nub $ sort deb
-    in 
+analyse n x lst@(_:rs) =
+    let deb = take n lst
+        l = length $ nub $ sort deb
+    in
     -- traceShow (l,deb) $
     if l == n then
       x+n
