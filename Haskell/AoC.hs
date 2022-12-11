@@ -111,7 +111,7 @@ lookup' e l = fromJust $ lookup e l
 
 
 number :: ReadP Int
-number = fmap read numberStr
+number = read <$> numberStr
 
 numberStr :: ReadP String
 numberStr = do
@@ -119,3 +119,16 @@ numberStr = do
     num <- many1 (satisfy isDigit)
     return (neg:num)
 
+
+genRange :: String -> ReadP (Int, Int)
+genRange str = do
+    lo <- number
+    string str
+    hi <- number
+    return (lo, hi)
+
+dotRange :: ReadP (Int, Int)
+dotRange = genRange ".."
+
+dashRange :: ReadP (Int, Int)
+dashRange = genRange "-"
