@@ -75,7 +75,6 @@ def compute_scenic_score(r, c):
         score = 0
         x = r
         y = c
-
         x += dx
         y += dy
 
@@ -90,7 +89,6 @@ def compute_scenic_score(r, c):
             y += dy
 
         tot_score *= score
-
     return tot_score
 
 
