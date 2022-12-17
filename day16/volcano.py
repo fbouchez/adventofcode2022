@@ -75,10 +75,8 @@ max_pressure_path = []
 def show(path):
     # only works for path 2
     s = []
-    # for who,lab in path:
-    for x  in path:
-        s.append(str(x))
-        # s.append(who + lab)
+    for who,lab in path:
+        s.append(who + lab)
     return ' - '.join(s)
 
 
@@ -444,7 +442,7 @@ def explore_ordering_elephant(
         assert time_left >= 0
         next_pressure += time_left * current_flow
 
-        ordering.append("wait")
+        ordering.append(("both", "wait"))
         update_max_pressure(next_pressure, ordering)
         ordering.pop()
 
