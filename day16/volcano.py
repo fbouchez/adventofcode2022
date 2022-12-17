@@ -425,7 +425,7 @@ def explore_ordering_elephant(
     if num_children == 0:
         # just do nothing for the time remaining
         # wait for next valve of either man or elephant
-        print("Nothing worth to do from man:", cur_node_man.id, " and eleph:", cur_node_eleph.id, "... waiting after\n\t", show(ordering))
+        # print("Nothing worth to do from man:", cur_node_man.id, " and eleph:", cur_node_eleph.id, "... waiting after\n\t", show(ordering))
 
         if time_progress_man != 0:
             assert time_progress_eleph == 0
