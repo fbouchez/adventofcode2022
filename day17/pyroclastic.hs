@@ -9,6 +9,22 @@ import qualified Data.Text as T
 import qualified Data.Sequence as S
 import Text.ParserCombinators.ReadP
 
+
+maximumHeight = 3300
+heightWindow = 200
+gameWidth = 7
+
+
+-- numShapes = 2022              -- Part I
+numShapes = 10000              -- some test
+-- numShapes = 1000000000000     -- Part II
+
+
+patternShape = lshap -- for input-small
+-- patternShape = hbar -- for my input
+
+
+
 data Direction = Dirleft | Dirright deriving (Show)
 
 -- instance Read Direction where
@@ -23,7 +39,7 @@ readDir '<' = Dirleft
 readDir '>' = Dirright
 
 
-data TShape = TShape ((Int, Int), [(Int, Int)])
+data TShape = TShape ((Int, Int), [(Int, Int)]) deriving (Eq)
 
 
 hbar = TShape ((4, 1), [(0,0), (1, 0), (2, 0), (3, 0)])
@@ -43,11 +59,12 @@ instance Show TShape where
     show (TShape ((3, 3), _)) = "⅃"
 
 
-data TGame = Game (Int, Array (Int, Int) Bool)
+--      currentHeight, shiftHeight, [list of position where shape is at 1]
+data TGame = Game ((Int, Int, [Int]), Array (Int, Int) Bool)
 
 instance Show TGame where
-    show (Game (height, arr)) =
-      "Height: " ++ show height ++
+    show (Game ((height, hshift, pr), arr)) =
+      "Height: " ++ show height ++ " shifted by " ++ show hshift ++
       "\n" ++ mapToStr arr
 
 mapToStr arr = unlines maplines
@@ -61,40 +78,37 @@ mapToStr arr = unlines maplines
 
 
 
-maximumHeight = 3300
-numShapes = 2022
-
 
 main = do
     contents <- getContents
     let dirlst = map readDir $ filter (/= '\n') contents :: [Direction]
-        initgame = Game (0, listArray ((1, 1), (7, maximumHeight)) (repeat False)) :: TGame
+        initgame = Game ((0, 0, []), listArray ((1, 1), (gameWidth, heightWindow)) (repeat False)) :: TGame
 
-        finalgame = playgame initgame numShapes (cycle dirlst) (cycle shapes)
+        finalgame = playgame initgame numShapes (length dirlst) 1 (cycle dirlst) (cycle shapes)
 
-    print dirlst
-    print initgame
+    -- print dirlst
+    -- print initgame
     print finalgame
-    let Game (h, _) = finalgame
+    let Game ((h, sh, _), _) = finalgame
 
-    putStrLn $ "Final height: " ++ show h
-
-
+    putStrLn $ "Final height: " ++ show h ++ " shifted by " ++ show sh
 
 
 
 
 
 
-playgame game 0 _ _ = game
-playgame game@(Game (height, arr)) nremain dirs (shap:shaplst) =
-    case playround game dirs shap of
+
+
+playgame game 0 _ _ _ _ = game
+playgame game@(Game (_, arr)) nremain numDirs curDir dirs (shap:shaplst) =
+    case playround game numDirs curDir dirs shap of
       Left g -> error $ "not enough height : " ++ show nremain ++ " shapes still to place"
-      Right (dirs', next@(Game (h', arr'))) -> playgame next (nremain-1) dirs' shaplst
+      Right (curDir', dirs', next) -> playgame next (nremain-1) numDirs curDir' dirs' shaplst
 
 
 
-playround game@(Game (gameheight, arr)) dirs shap = -- trace ("Adding piece " ++ show shap) $
+playround game@(Game ((gameheight, gamesh, prevSeen), arr)) numDirs curDir dirs shap = -- trace ("Adding piece " ++ show shap) $
     let initx = 3
         inity = gameheight + 3 + h
         TShape ((w, h), pos) = shap
@@ -102,8 +116,10 @@ playround game@(Game (gameheight, arr)) dirs shap = -- trace ("Adding piece " ++
     in
     -- trace ("Init position " ++ show (initx, inity)) $
 
-    let continue [] x y = error "No direction left!"
-        continue (d:dirs') x y =
+    let continue _ [] x y = error "No direction left!"
+        continue curDir (d:dirs') x y = --trace ("Dir idx " ++ show curDir ++ " max " ++ show numDirs) $
+          let curDir' = (curDir `mod` numDirs) + 1
+          in
           let trymove Dirleft x y = -- trace ("Try <") $
                 if x > 1 && not (collision arr shap (x-1) y) then x-1 else x
 
@@ -120,19 +136,39 @@ playround game@(Game (gameheight, arr)) dirs shap = -- trace ("Adding piece " ++
           let y' = trydown x' y
           in
           -- trace ("Now y' is " ++ show y') $
-          if y' == y then (dirs', lockShape game shap x' y')
-                     else continue dirs' x' y'
+          if y' == y then (curDir', dirs', lockShape game curDir' shap x' y')
+                     else continue curDir' dirs' x' y'
     in
     if inity > maxgameheight then Left game
-                             else Right $ continue dirs initx inity
+                             else Right $ continue curDir dirs initx inity
 
 
-lockShape (Game (gameheight, arr)) s@(TShape ((w,h), pos)) x y = trace ("Locking " ++ show s ++ " at position " ++ show (x, y)) $
-    let g = Game (max gameheight y, arr // poslist)
+lockShape (Game ((gameheight, sh, prevSeen), arr)) curDir s@(TShape ((w,h), pos)) x y = trace ("Locking " ++ show s ++ " at position " ++ show (x, y) ++ show prevSeen) $
+
+    let arr' = arr // poslist
+        poslist = zip (shiftPos pos x y) $ repeat True
     in
+
+    let prevSeen' = if (x == 1) && s == patternShape
+          then 
+            let gameDrawing = getGameDrawing y sh arr'
+                shgamedrawing = map ((-) y) gameDrawing
+            in
+            trace ("Some shape " ++ show s ++ " at " ++ show curDir ++ " <> " ++
+                      show shgamedrawing
+                     ) $
+            if curDir `elem` prevSeen then trace ("FOUND SAME POSITION " ++ show curDir) $ prevSeen
+                                      else curDir:prevSeen
+          else prevSeen
+    in
+
+    let g = Game ((max gameheight y, sh, prevSeen'), arr')
+    in
+
       -- traceShowId g
-      g
-    where poslist = zip (shiftPos pos x y) $ repeat True
+    if x == 1 then compressGame g y
+              else g
+
 
 
 
@@ -143,3 +179,30 @@ collision arr (TShape ((w,h), pos)) x y = foldl checkposition False $ shiftPos p
 
 shiftPos pos x y = map (shift x y) pos
   where shift x y (a, b) = (x+a, y-b)
+
+
+
+getGameDrawing y low arr = map searchMinTrue [1..gameWidth]
+  where searchMinTrue x = searchMinTrue' x y
+        searchMinTrue' x y =
+          if y == low then y -- trace ("Cannot compress") $ y
+                      else if arr!(x,y) then y
+                                        else searchMinTrue' x (y-1)
+
+
+compressGame game@(Game ((h, sh, pr), arr)) y = -- trace ("Compressing game at " ++ show y) $
+    rebuildAt $ minimum $ getGameDrawing y sh arr
+  where rebuildAt newsh = 
+          if newsh == sh then game
+                         -- else trace ("Can compress at " ++ show newsh ++ "\n" ++ show game) $
+                         else -- trace ("Can compress at " ++ show newsh) $
+                          Game ((h, newsh, pr), arr')
+          where
+            narr = listArray ((1, newsh), (gameWidth, newsh+heightWindow)) (repeat False)
+            arr' = narr // trues
+            trues = filter (aboveshift newsh) $ filter ((==) True . snd) $ assocs arr
+            aboveshift s ((_,y),_) = y >= s
+
+
+
+
