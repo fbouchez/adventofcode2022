@@ -36,6 +36,7 @@ coupleWhen :: (Char -> Bool) -> String -> (String, String)
 coupleWhen p s = let [a,b] = wordsWhen p s in (a,b)
 
 couple [a,b] = (a,b)
+triple [a,b,c] = (a,b,c)
 
 splitComma :: String -> [String]
 splitComma = wordsWhen (==',')
