@@ -38,6 +38,12 @@ coupleWhen p s = let [a,b] = wordsWhen p s in (a,b)
 couple [a,b] = (a,b)
 triple [a,b,c] = (a,b,c)
 
+ap3 f (x,y,z) = (f x, f y, f z)
+
+add3 (x,y,z) (a,b,c) = (x+a, y+b, z+c)
+
+
+
 splitComma :: String -> [String]
 splitComma = wordsWhen (==',')
 

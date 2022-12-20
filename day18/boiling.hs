@@ -34,8 +34,6 @@ space = listArray safebounds $ repeat False
 
 trap f (x,y,z) = (f x, f y, f z)
 
-add3 (x,y,z) (a,b,c) = (x+a, y+b, z+c)
-
 main = do
     contents <- getContents
     let cubesl = lines contents
