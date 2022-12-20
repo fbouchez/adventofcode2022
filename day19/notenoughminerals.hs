@@ -33,7 +33,10 @@ data BluePrint = BluePrint {
         rorecost :: Int,   -- cost in ore
         rclaycost :: Int,  -- cost in ore
         robscost :: (Int, Int), -- cost in ore / clay
-        rgeocost :: (Int, Int)  -- cost in ore / obs
+        rgeocost :: (Int, Int),  -- cost in ore / obs
+        maxorerate :: Int,   -- max usefull production rate for ore
+        maxclayrate :: Int,
+        maxobsrate :: Int
       }
     deriving(Show)
 
@@ -62,8 +65,14 @@ parseBluePrint = do
     string " ore and "
     geodecosteObs <- number
     string " obsidian."
-    return $ BluePrint id orecost claycost (obsidcostOre, obsidcostClay) (geodecostOre, geodecosteObs)
+    return $ analyseBP id orecost claycost (obsidcostOre, obsidcostClay) (geodecostOre, geodecosteObs)
 
+
+analyseBP id orecost claycost (obsidcostOre, obsidcostClay) (geodecostOre, geodecosteObs) =
+    BluePrint id orecost claycost (obsidcostOre, obsidcostClay) (geodecostOre, geodecosteObs) maxorerate maxclayrate maxobsrate
+    where maxorerate = maximum [orecost, claycost, obsidcostOre, geodecostOre]
+          maxclayrate = obsidcostClay
+          maxobsrate = geodecosteObs
 
 
 main = do
@@ -74,17 +83,24 @@ main = do
     print blueprintsraw
     print blueprints
 
+    let bp = blueprints!!1
+
+
     -- let testBuy = [Rclay, Rclay, Rclay, Robs, Rclay, Robs, Rgeo, Rgeo]
         -- sol = simulate (head blueprints) initrobstate initminstate inittime testBuy
     -- print sol
 
     -- let (numgeodes, path) = bruteForceBP [] (head blueprints) initrobstate initminstate inittime
-    let (numgeodes, path) = bruteForceBP [] (blueprints!!1) initrobstate initminstate inittime
+    let (numgeodes, path) = bruteForceBP [] bp initrobstate initminstate inittime
 
-    putStrLn $ "Nombre de géodes ouvertes: " ++ show numgeodes
-    putStrLn $ "Simulating path: " ++ show (reverse path)
+    -- putStrLn $ "Nombre de géodes ouvertes: " ++ show numgeodes
+    -- putStrLn $ "Simulating path: " ++ show (reverse path)
 
-    let sol = simulate (head blueprints) initrobstate initminstate inittime $ reverse path
+    let testpath = [Rnone,Rnone,Rore,Rnone,Rore,Rclay,Rclay,Rclay,Rclay,Rclay,Rclay,Robs,Robs,Robs,Robs,Rnone,Robs,Rgeo,Robs,Rgeo,Rnone,Rgeo,Rnone,Rore]
+
+    let sol = simulate bp initrobstate initminstate inittime $ testpath
+    -- let sol = simulate bp initrobstate initminstate inittime $ reverse 
+    -- path
     print sol
 
 
@@ -112,7 +128,15 @@ initminstate = MinState 0 0 0 0
 initrobstate = RobState 1 0 0 0
 
 
-data Status = Status Int RobotState MineralState deriving (Show)
+data Status = Status Int RobotState MineralState
+
+instance Show Status where
+    show (Status time r m) =
+      show time ++ " minutes " ++
+      " Ore: " ++ show (rore r) ++ "/" ++ show (ore m) ++
+      " Clay: " ++ show (rclay r) ++ "/" ++ show (clay m) ++
+      " Obsidan: " ++ show (robs r) ++ "/" ++ show (obsidian m) ++
+      " Geodes: " ++ show (rgeo r) ++ "/" ++ show (geode m)
 
 
 nextMinState robots mst =
@@ -176,7 +200,8 @@ simulate bp robots minst timeleft (r:rs) =
     traceShow (Status timeleft robots minst) $
     if canBuildRobot bp minst r then trace (if r == Rnone then "Not building..." else "Building robot " ++ show r) $
                                      simulate bp robots' minst'' (timeleft-1) rs
-                                else simulate bp robots minst' (timeleft-1) (r:rs)
+                                else trace ("Cannot build robot " ++ show r) $
+                                     simulate bp robots minst' (timeleft-1) (r:rs)
     where (robots', minst'') = simulateTurn bp robots minst r
           (_, minst') = simulateTurn bp robots minst Rnone
 
@@ -203,7 +228,10 @@ bruteForceBP path bp robots minst timeleft =
                              realbuildchoices
                         else buildchoices
 
-        choices = filter (canBuildRobot bp minst) initchoices
+        choicesa = filter (canBuildRobot bp minst) initchoices
+
+        -- choices = filter tooMuchMins choisesa
+        choices = choicesa
 
         tryChoice r =
           let (robots', minst') = simulateTurn bp robots minst r
@@ -232,3 +260,11 @@ uselessToWaitMore bp robots minst =
     noobs = robs robots == 0
 
     canrgeo = canBuildRobot bp minst Rgeo
+
+
+
+--
+-- if we produce more mins per turn than we can consume...
+--
+--
+-- tooMuchMins = 
