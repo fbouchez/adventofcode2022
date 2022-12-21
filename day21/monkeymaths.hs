@@ -67,7 +67,10 @@ main = do
 
     print monkeys
 
+    putStrLn "First part: "
     print $ eval monkeys
+    putStrLn "Second part: "
+    print $ eval2 monkeys
 
 
 eval monkeys =
@@ -85,19 +88,59 @@ eval' ms (Monkey name (Operation f o s)) = applyOp o fn sn
         sm = fromJust $ lookup s ms
 
 
-applyOp' op (Right a) (Right b) = Right $ applyOp op a b
-applyOp' op (Left a) (Left b) = error "Two unknows"
-
-applyOp' op (Right a) (Left b) = reverseApply op a b
-applyOp' op (Left a) (Right b) = reverseApply op a b
-
-
-applyOp' Plus (Just a) Nothing = Left $ flip (-) a
-applyOp' Plus Nothing (Just b) = Left $ flip (-) b
 
 applyOp Plus a b = a+b
 applyOp Minus a b = a-b
 applyOp Mult a b = a*b
 applyOp Div a b = a `div` b
 applyOp Equal a b = error "Equals appearing not in equation"
+
+
+eval2 monkeys =
+    let Monkey _ (Operation a _ b) = fromJust $ lookup "root" monkeys
+        ae = eval2' monkeys am
+        be = eval2' monkeys bm
+        am = fromJust $ lookup a monkeys
+        bm = fromJust $ lookup b monkeys
+    in
+      resolveEquation ae be
+
+
+resolveEquation (Right a) (Right b) = error "No unknown"
+resolveEquation (Left a) (Left b) = error "Two unknows"
+resolveEquation (Right a) (Left f) = f a
+resolveEquation (Left f) (Right b) = f b
+
+eval2' :: [(String, Monkey)] -> Monkey -> Either (Int -> Int) Int
+eval2' ms (Monkey "humn" _) = Left id
+eval2' ms (Monkey name (Yell n)) = Right n
+eval2' ms (Monkey name (Operation f o s)) = applyOp2 o fn sn
+  where fn = eval2' ms fm
+        sn = eval2' ms sm
+        fm = fromJust $ lookup f ms
+        sm = fromJust $ lookup s ms
+
+
+applyOp2 op (Right a) (Right b) = Right $ applyOp op a b
+applyOp2 op (Left a) (Left b) = error "Two unknows"
+
+-- r == a + x => x == r-a
+applyOp2 Plus (Right a) (Left f) = Left $ f . flip (-) a
+applyOp2 Plus (Left f) (Right b) = Left $ f . flip (-) b
+
+-- r == a - x => x == a-r
+applyOp2 Minus (Right a) (Left f) = Left $ f . (-) a
+-- r == x - b => x == b+r
+applyOp2 Minus (Left f) (Right b) = Left $ f . (+) b
+
+-- r == a * x => x == r // a
+applyOp2 Mult (Right a) (Left f) = Left $ f . flip div a
+applyOp2 Mult (Left f) (Right b) = Left $ f . flip div b
+
+-- r == a // x => x == a // r
+applyOp2 Div (Right a) (Left f) = Left $ f . div a
+-- r == x // b => x == r * b
+applyOp2 Div (Left f) (Right b) = Left $ f . (*) b
+
+
 
