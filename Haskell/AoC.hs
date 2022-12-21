@@ -20,7 +20,7 @@ import Data.Function
 import Data.Tuple.Extra
 import qualified Data.PQueue.Prio.Min as PQ
 import qualified Data.Set as Set
-import Text.ParserCombinators.ReadP
+import qualified Text.ParserCombinators.ReadP as T
 import Text.Printf
 
 
@@ -116,26 +116,36 @@ hist is = genhist (low,high) is
 lookup' :: (Eq a) => a -> [(a,b)] -> b
 lookup' e l = fromJust $ lookup e l
 
+parseIdent :: T.ReadP String
+parseIdent = do
+    c <- T.satisfy isAlpha
+    rst <- T.many $ T.satisfy isAlphaNum
+    return $ c:rst
 
-number :: ReadP Int
+isAlnumDot c =
+    isAlphaNum c || c == '.' || c == '/'
+
+
+
+number :: T.ReadP Int
 number = read <$> numberStr
 
-numberStr :: ReadP String
+numberStr :: T.ReadP String
 numberStr = do
-    neg <- option ' ' (satisfy (=='-'))
-    num <- many1 (satisfy isDigit)
+    neg <- T.option ' ' (T.satisfy (=='-'))
+    num <- T.many1 (T.satisfy isDigit)
     return (neg:num)
 
 
-genRange :: String -> ReadP (Int, Int)
+genRange :: String -> T.ReadP (Int, Int)
 genRange str = do
     lo <- number
-    string str
+    T.string str
     hi <- number
     return (lo, hi)
 
-dotRange :: ReadP (Int, Int)
+dotRange :: T.ReadP (Int, Int)
 dotRange = genRange ".."
 
-dashRange :: ReadP (Int, Int)
+dashRange :: T.ReadP (Int, Int)
 dashRange = genRange "-"
