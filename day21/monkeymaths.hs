@@ -88,12 +88,13 @@ eval' ms (Monkey name (Operation f o s)) = applyOp o fn sn
         sm = fromJust $ lookup s ms
 
 
+applyOp op a b = trace ("Applying " ++ show (op, a, b)) $ applyOp' op a b
 
-applyOp Plus a b = a+b
-applyOp Minus a b = a-b
-applyOp Mult a b = a*b
-applyOp Div a b = a `div` b
-applyOp Equal a b = error "Equals appearing not in equation"
+applyOp' Plus a b = a+b
+applyOp' Minus a b = a-b
+applyOp' Mult a b = a*b
+applyOp' Div a b = a `safediv` b
+applyOp' Equal a b = error "Equals appearing not in equation"
 
 
 eval2 monkeys =
@@ -134,13 +135,15 @@ applyOp2 Minus (Right a) (Left f) = Left $ f . (-) a
 applyOp2 Minus (Left f) (Right b) = Left $ f . (+) b
 
 -- r == a * x => x == r // a
-applyOp2 Mult (Right a) (Left f) = Left $ f . flip div a
-applyOp2 Mult (Left f) (Right b) = Left $ f . flip div b
+applyOp2 Mult (Right a) (Left f) = Left $ f . flip safediv a
+applyOp2 Mult (Left f) (Right b) = Left $ f . flip safediv b
 
 -- r == a // x => x == a // r
-applyOp2 Div (Right a) (Left f) = Left $ f . div a
+applyOp2 Div (Right a) (Left f) = Left $ f . safediv a
 -- r == x // b => x == r * b
 applyOp2 Div (Left f) (Right b) = Left $ f . (*) b
 
 
-
+safediv a b = 
+    trace ("Making division " ++ show (a, b)) $
+    assert (a `mod` b == 0) $ a `div` b
