@@ -5,8 +5,7 @@
 -- %s/\//`div`/
 --
 
-main = do
-    print root
+main = print root
 
 root = pppw + sjmn
 dbpl = 5
