@@ -40,6 +40,7 @@ triple [a,b,c] = (a,b,c)
 
 ap3 f (x,y,z) = (f x, f y, f z)
 
+add2 (x,y) (a,b) = (x+a, y+b)
 add3 (x,y,z) (a,b,c) = (x+a, y+b, z+c)
 
 
@@ -61,8 +62,20 @@ genhist bnds is = accumArray (+) 0 bnds [(i, 1) | i<-is, inRange bnds i]
 
 type Coord = (Int, Int)
 type DigitMap = Array Coord Int
+type CharMap = Array Coord Char
 
 type XYZCoord = (Int, Int, Int)
+
+getCharMap :: IO CharMap
+getCharMap = do
+    contents <- getContents
+    let rows = lines contents
+        height = length rows
+        width  = length . head $ rows
+    let imap = listArray ((1,1), (height,width)) $ concat rows
+    return imap
+
+
 
 getIntMap :: IO DigitMap
 getIntMap = do
@@ -82,17 +95,40 @@ showDigitMap imap =
     in unlines rows
 
 
+showCharMap grid = unlines $ map getRow $ [lor..hir]
+  where ((lor,loc),(hir,hic)) = bounds grid
+        getRow r = map (getPos r) $ [loc..hic]
+        getPos r c = grid!(r,c)
+
+
+
+data Cardir = N | S | W | E deriving (Eq, Show)
+
+
+inDir N = (-1, 0)
+inDir S = (1, 0)
+inDir W = (0, -1)
+inDir E = (0, 1)
+
+lookIn N = [(-1,-1), (-1, 0), (-1, 1)]
+lookIn S = [(1,-1), (1, 0), (1, 1)]
+lookIn W = [(-1,-1), (0, -1), (1, -1)]
+lookIn E = [(-1,1), (0, 1), (1, 1)]
+
+moveTo dir p = add2 p $ inDir dir
+
 crossDirs = [(1,0), (-1,0), (0,1), (0,-1)]
-aroundDirs = (,) <$> [-1,0,1] <*> [-1,0,1]
-diagDirs = filter (/=(0,0)) $ aroundDirs
+localArea = (,) <$> [-1,0,1] <*> [-1,0,1]
+aroundDirs = filter (/=(0,0)) $ localArea
 
 neighFuns :: [Coord] -> [Coord -> Coord]
-neighFuns dirs = do map makefun dirs
-  where makefun (dr,dc) = \(r,c) -> (r+dr,c+dc)
+neighFuns dirs = map add2 dirs
 
-allNeighbours (r,c) = map ($ (r,c)) $ neighFuns crossDirs
 
-allArround (r,c) = map ($ (r,c)) $ neighFuns aroundDirs
+neighDir dirs (r,c) = map ($ (r,c)) $ neighFuns dirs
+
+crossNeighbours = neighDir crossDirs
+allNeighbours = neighDir aroundDirs
 
 neighb :: Array (Int, Int) Int -> (Int, Int) -> [(Int, Int)]
 neighb arr (r,c) = filter (inRange (bounds arr)) $ allNeighbours (r,c)

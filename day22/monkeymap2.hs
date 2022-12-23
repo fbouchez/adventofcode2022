@@ -156,3 +156,14 @@ side 1 L = tr 3
 side 1 R = rev 6
 side 1 D = reg 4
 
+
+side 1 U = rev 2
+side 1 L = tr 3
+side 1 R = rev 6
+side 1 D = reg 4
+
+
+
+
+
+

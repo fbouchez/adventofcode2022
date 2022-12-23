@@ -17,50 +17,19 @@ import Text.ParserCombinators.ReadP
 -- numrounds = 10
 numrounds = 10000
 
-showGrid grid = unlines $ map getRow $ [lor..hir]
-  where ((lor,loc),(hir,hic)) = bounds grid
-        getRow r = map (getPos r) $ [loc..hic]
-        getPos r c = grid!(r,c)
-
+showGrid = showCharMap
 
 type Elf = (Int, Int)
 type Grid = Array (Int, Int) Char
-
-data Dir = N | S | W | E deriving (Eq, Show)
 
 
 initorder = [N, S, W, E]
 
 cycleorder (o:os) = os ++ [o]
 
-lookIn N = [(-1,-1), (-1, 0), (-1, 1)]
-lookIn S = [(1,-1), (1, 0), (1, 1)]
-lookIn W = [(-1,-1), (0, -1), (1, -1)]
-lookIn E = [(-1,1), (0, 1), (1, 1)]
-
-lookAround = diagDirs
-
-addPos (r,c) (dr,dc) = (r+dr, c+dc)
-
-diffDir N = (-1, 0)
-diffDir S = (1, 0)
-diffDir W = (0, -1)
-diffDir E = (0, 1)
-
-moveTo d p = addPos p $ diffDir d
-
-
-
 main = do
-    print lookAround
-
-    contents <- getContents
-    let rows = lines contents
-        width = length $ head rows
-        height = length rows
-        grid = listArray ((1, 1), (height, width)) $ concat rows
-
-        elves = getElves grid
+    grid <- getCharMap
+    let elves = getElves grid
 
     print elves
     print grid
@@ -143,16 +112,16 @@ collision '.' '#' = '#'
 collision '#' '#' = 'C' -- collision
 
 
-firstPart :: Grid -> [Elf] -> [Dir] -> [Elf]
+firstPart :: Grid -> [Elf] -> [Cardir] -> [Elf]
 firstPart g e dirs = map (moveIfNeeds dirs) e
   where moveIfNeeds dirs p =
-          if all ((=='.') . (g!)) $ map (addPos p) lookAround
+          if all ((=='.') . (g!)) $ allNeighbours p
             then p
             else tryMove dirs p
 
         tryMove [] p = p
         tryMove (d:rd) p =
-          if all ((=='.') . (g!)) $ map (addPos p) (lookIn d)
+          if all ((=='.') . (g!)) $ neighDir (lookIn d) p
             then moveTo d p
             else tryMove rd p
 
