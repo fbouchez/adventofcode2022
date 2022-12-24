@@ -101,7 +101,7 @@ showCharMap grid = unlines $ map getRow $ [lor..hir]
         getPos r c = grid!(r,c)
 
 
-
+data Turn = L | R deriving (Eq, Show)
 data Cardir = N | S | W | E deriving (Eq, Show)
 
 
