@@ -18,11 +18,6 @@ import Text.ParserCombinators.ReadP
 chdir 'R' = R
 chdir 'L' = L
 
-opposite N = S
-opposite S = N
-opposite E = W
-opposite W = E
-
 parseOrders = do
     -- d <- get
     -- n <- number

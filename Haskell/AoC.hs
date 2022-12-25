@@ -41,6 +41,7 @@ triple [a,b,c] = (a,b,c)
 ap3 f (x,y,z) = (f x, f y, f z)
 
 add2 (x,y) (a,b) = (x+a, y+b)
+mul2 p (x,y) = (p*x, p*y)
 add3 (x,y,z) (a,b,c) = (x+a, y+b, z+c)
 
 
@@ -104,6 +105,15 @@ showCharMap grid = unlines $ map getRow $ [lor..hir]
 data Turn = L | R deriving (Eq, Show)
 data Cardir = N | S | W | E deriving (Eq, Show)
 
+dirSym N = '^'
+dirSym S = 'v'
+dirSym W = '<'
+dirSym E = '>'
+
+opposite N = S
+opposite S = N
+opposite E = W
+opposite W = E
 
 inDir N = (-1, 0)
 inDir S = (1, 0)
@@ -117,7 +127,12 @@ lookIn E = [(-1,1), (0, 1), (1, 1)]
 
 moveTo dir p = add2 p $ inDir dir
 
+crossDirs :: [(Coord)]
 crossDirs = [(1,0), (-1,0), (0,1), (0,-1)]
+
+crossLocalDirs :: [(Coord)]
+crossLocalDirs = [(1,0), (-1,0), (0,0), (0,1), (0,-1)]
+
 localArea = (,) <$> [-1,0,1] <*> [-1,0,1]
 aroundDirs = filter (/=(0,0)) $ localArea
 
